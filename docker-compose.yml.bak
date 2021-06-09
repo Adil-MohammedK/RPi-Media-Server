@@ -67,8 +67,6 @@ services:
       - PGID=1000
       - TZ=Asia/Kolkata
       - TRANSMISSION_WEB_HOME=/combustion-release/ #optional
-      - USER=pi #optional
-      - PASS=coolcool12 #optional
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -81,61 +79,81 @@ services:
       - 51413:51413/udp
     restart: unless-stopped
 
-#  deluge:
-#    image: linuxserver/deluge
-#    container_name: deluge
-#    dns:
-#      - 8.8.8.8
-#      - 1.1.1.1
-    # network_mode: host
-#    environment:
-#      - PUID=1000
-#      - PGID=1000
-#      - TZ=Asia/Kolkata
-#      - UMASK=022 #optional
-#      - DELUGE_LOGLEVEL=error #optional
-#    volumes:
-#      - ~/mnt/HDD1/Media/appdata/deluge/config:/config
-#      - ~/mnt/HDD1/Media/downloads:/downloads
-#    ports:
-#      - 8112:8112
-#      - 58846:58846
-#      - 58946:58946
-#    restart: unless-stopped
+  transmission-openvpn:
+    image: haugene/transmission-openvpn
+    container_name: transmission-openvpn
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ~/mnt/HDD1/Media/appdata/transmission-vpn/config:/config
+      - ~/mnt/HDD1/Media/downloads:/downloads
+      - ~/mnt/HDD1/Media/appdata/FreeVPN/:/etc/openvpn/custom/
+    environment:
+      - OPENVPN_PROVIDER=custom
+      - OPENVPN_USERNAME=${OPENVPN_USERNAME}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - LOCAL_NETWORK=192.168.1.0/24
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+      - TRANSMISSION_WEB_UI=combustion #optional
+      - TRANSMISSION_RPC_USERNAME=${TRANSMISSION_RPC_USERNAME}
+      - TRANSMISSION_RPC_PASSWORD=${TRANSMISSION_RPC_PASSWORD}
+      - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
+      - TRANSMISSION_DOWNLOAD_DIR=/downloads/complete
+      - TRANSMISSION_INCOMPLETE_DIR=/downloads/incomplete
+      - TRANSMISSION_WATCH_DIR=/downloads/watch
+      - TRANSMISSION_HOME=/downloads/transmission-home
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+    ports:
+      - '9091:9091'
+    restart: unless-stopped
 
-# ==================================================================================================================================
-# Check instructions at https://greenfrognest.com/LMDSVPN.php if you would like to secure other containers using this as a gateway.
-# ==================================================================================================================================
-#  vpn:
-#    container_name: vpn-gateway
-#    image: dperson/openvpn-client
-#    restart: unless-stopped
-#    ports:            # Add all port numbers of the containers that you will put behind VPN - not all containers just the one you have to.
-#      - 90:80         # Redirecting to port 90 as 80 we will need at some point for reverseproxy
-#    dns:              # Use VPN provided DNS IPs if you have them.
-#      - 8.8.8.8
-#      - 8.8.4.4
-#    cap_add:
-#      - NET_ADMIN
-#    devices:
-#      - '/dev/net/tun:/dev/net/tun:rwm'
-#    environment:
-#      FIREWALL: ''    # If you use different VPN ports added under VPN section below, add them into FIREWALL section also, otherwise leave it empty as is.
-#     #VPN 'server_address;user;password;port'    # Configure VPN server address, authentication and port if needed by your VPN provider (port value is optional)
-#      PUID: 1000
-#      PGID: 1000
-#      TZ: UTC+0
-#      ROUTE: '192.168.0.0/16'    # Specify subnet of your home LAN in order to connect into the container behind VPN - if you don't, containers will work but you wont be a$
-#    networks:
-#      - default
-#   read_only: true
-#    tmpfs:
-#      - /run
-#      - /tmp
-#    security_opt:
-#      - label:disable
-#    stdin_open: true
-#    tty: true
-#    volumes:
-#      - ./vpn:/vpn    # Put .ovpn file you received from VPN provider inside ~/LMDS/vpn/ folder, required by the container to connect to the VPN provider server.
+  sonarr_netimport:
+    image: thundermagic/sonarr_netimport:latest
+    restart: always
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    container_name: sonarr_netimport
+    #extra_hosts: *pi
+    environment:
+      - TVDB_USERNAME=${TVDB_USERNAME}
+      - TVDB_USER_KEY=${TVDB_USER_KEY}
+      - TVDB_API_KEY=${TVDB_API_KEY}
+    # IP address and port number where sonarr can be accessed
+      - SONARR_IP=192.168.1.40
+      - SONARR_PORT=8989
+    # Sonarr app API key. This is on sonarr under settings>general
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - SYNC_INTERVAL=3600  # Interval at which to sync with TVDB, in seconds
+      - SEARCH_MISSING_EPISODES=1  # 1 is True
+      - QUALITY_PROFILE_ID=1  # 1 is profile any
+      - MONITORED=1  # 1 is True
+      - ROOT_FOLDER_PATH=/home/pi/mnt/HDD1/Media/Series/  # Full path of root folder
 
+  radarr_netimport:
+    image: thundermagic/radarr_netimport:latest
+    restart: on-failure
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    container_name: radarr_netimport
+    environment:
+      - TMDB_ACCESS_TOKEN=${TMDB_ACCESS_TOKEN}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - TMDB_LIST_ID=${TMDB_LIST_ID}
+    # IP address and port number where radarr can be accessed
+      - RADARR_IP=192.168.1.40
+      - RADARR_PORT=7878
+    # radarr API key. This is on radarr under settings>general
+      - RADARR_API_KEY=${RADARR_API_KEY}
+      - SYNC_INTERVAL=3600  # Interval at which to sync with TMDB, in seconds
+      - QUALITY_PROFILE_ID=1  # 1 is profile any
+      - ROOT_FOLDER_PATH=/home/pi/mnt/HDD1/Media/movies/  # Full path of root folder  
