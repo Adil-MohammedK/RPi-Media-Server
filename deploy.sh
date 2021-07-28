@@ -8,6 +8,7 @@
 declare -A cont_array=(
 	[portainer]="Portainer - GUI Docker Manager"
 	[sonarr]="Sonarr"
+	[medusa]="Medusa"
 	[radarr]="Radarr"
 	[lidarr]="Lidarr"
 	[bazarr]="Bazarr"
@@ -19,6 +20,7 @@ declare -A cont_array=(
 	[sabznbd]="SABznbd - Usenet groups client"
 	[jellyfin]="JellyFin - Media manager no license needed"
 	[plex]="Plex - Media manager"
+	[ombi]="Ombi - Plex Requests Server"
 	[emby]="Emby - Media manager like Plex"
 	[embystat]="EmbyStat - Statistics for Emby"
 	[tvheadend]="TVheadend - TV streaming server"
@@ -31,6 +33,7 @@ declare -A cont_array=(
 declare -a armhf_keys=(
 	"portainer"
 	"sonarr"
+	"medusa"
 	"radarr"
 	"lidarr"
 	"bazarr"
@@ -39,6 +42,7 @@ declare -a armhf_keys=(
 	"emby"
 	"embystat"
 	"plex"
+	"ombi"
 	"tvheadend"
 	"transmission"
 	"deluge"
@@ -87,12 +91,10 @@ password_dialog() {
 }
 #test=$( password_dialog )
 
-function command_exists() {
-	command -v "$@" >/dev/null 2>&1
-}
+command_exists() { command -v "$@" >/dev/null 2>&1 ; }
 
 #function copies the template yml file to the local service folder and appends to the docker-compose.yml file
-function yml_builder() {
+yml_builder() {
 
 	service="services/$1/service.yml"
 
