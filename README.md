@@ -62,6 +62,9 @@ Static IP address is not absolutely necessary just to try the project to find ou
 <pre><code>cd ~/LMDS</code></pre>
 <pre><code>./deploy.sh</code></pre>
 
+- When using FREEVPN, add the follwong line to default.ovpn file
+  `auth-user-pass /config/openvpn-credentials.txt`
+
 ## Menu
 
 ### Install Docker & Docker-compose
